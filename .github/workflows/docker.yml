@@ -70,13 +70,13 @@ jobs:
           BUILD_NUMBER="$(git rev-list --count HEAD)"
           SHORT_HASH="$(git rev-parse --short=7 HEAD)"
           if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
-            TAG_NAME="tag_name=b${BUILD_NUMBER}"
+            TAG_NAME="b${BUILD_NUMBER}"
           else
             SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
             TAG_NAME="${SAFE_NAME}-${SHORT_HASH}"
           fi
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "$TAG_NAME"  # print out for debugging
+          echo "tag_name=$TAG_NAME"  # print out for debugging
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
 
