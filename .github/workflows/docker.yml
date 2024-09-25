@@ -116,5 +116,5 @@ jobs:
           push: true
           platforms: ${{ matrix.config.platforms }}
           # tag list is generated from step above
-          tags: ${{ env.output_tags }}
+          tags: ${{ steps.tag.outputs.output_tags }}
           file: ${{ matrix.config.dockerfile }}
