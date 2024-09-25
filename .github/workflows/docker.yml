@@ -69,16 +69,26 @@ jobs:
         run: |
           BUILD_NUMBER="$(git rev-list --count HEAD)"
           SHORT_HASH="$(git rev-parse --short=7 HEAD)"
-          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
-            TAG_NAME="b${BUILD_NUMBER}"
+          REPO_OWNER="${GITHUB_REPOSITORY_OWNER@L}" # to lower case
+
+          # determine tag name postfix (build number, commit hash)
+          if [[ "${{ env.GITHUB_BRANCH_NAME }}" == "master" ]]; then
+            TAG_POSTFIX="b${BUILD_NUMBER}"
           else
-            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
-            TAG_NAME="${SAFE_NAME}-${SHORT_HASH}"
+            SAFE_NAME=$(echo "${{ env.GITHUB_BRANCH_NAME }}" | tr '/' '-')
+            TAG_POSTFIX="${SAFE_NAME}-${SHORT_HASH}"
           fi
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "tag_name=$TAG_NAME"  # print out for debugging
+
+          # list all tags possible
+          TAGS=""
+          TAGS="${TAGS}ghcr.io/${REPO_OWNER}/llama.cpp:${{ matrix.config.tag }},"
+          TAGS="${TAGS}ghcr.io/${REPO_OWNER}/llama.cpp:${{ matrix.config.tag }}-${TAG_POSTFIX}"
+
+          echo "output_tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "output_tags=$TAGS""  # print out for debugging
         env:
-          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_REPOSITORY_OWNER: '${{ github.repository_owner }}'
 
       # https://github.com/jlumbroso/free-disk-space/tree/54081f138730dfa15788a46383842cd2f914a1be#example
       - name: Free Disk Space (Ubuntu)
@@ -97,12 +107,6 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Downcase github.repository_owner
-        run: |
-          echo "repository_owner_lowercase=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_ENV
-        env:
-          GITHUB_REPOSITORY_OWNER: '${{ github.repository_owner }}'
-
       - name: Build and push Docker image (tagged + versioned)
         if: github.event_name == 'push'
         uses: docker/build-push-action@v6
@@ -110,8 +114,6 @@ jobs:
           context: .
           push: true
           platforms: ${{ matrix.config.platforms }}
-          tags: |
-            ghcr.io/${{ env.repository_owner_lowercase }}/llama.cpp:${{ matrix.config.tag }}
-            ghcr.io/${{ env.repository_owner_lowercase }}/llama.cpp:${{ matrix.config.tag }}-${{ env.COMMIT_SHA }}
-            ghcr.io/${{ env.repository_owner_lowercase }}/llama.cpp:${{ matrix.config.tag }}-${{ env.tag_name }}
+          # tag list is generated from step above
+          tags: ${{ env.output_tags }}
           file: ${{ matrix.config.dockerfile }}
