@@ -27,6 +27,11 @@ env:
   LLAMA_LOG_PREFIX: 1
   LLAMA_LOG_TIMESTAMPS: 1
 
+# Fine-grant permission
+# https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token
+permissions:
+  contents: write # for creating release
+
 jobs:
   macOS-latest-cmake-arm64:
     runs-on: macos-14
